@@ -1,4 +1,6 @@
+use std::ops::RangeInclusive;
 
+use super::PlotPoint;
 use crate::*;
 
 /// 2D bounding box of f64 precision.

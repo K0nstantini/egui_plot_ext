@@ -1,25 +1,29 @@
 //! Contains items that can be added to a plot.
 #![allow(clippy::type_complexity)] // TODO(emilk): simplify some of the callback types with type aliases
 
+use std::ops::RangeInclusive;
 
-use epaint::emath::Rot2;
+use epaint::{emath::Rot2, util::FloatOrd, Mesh};
+
+use crate::*;
+
+use super::{Cursor, LabelFormatter, PlotBounds, PlotTransform};
+use rect_elem::*;
+use values::ClosestElem;
 
 pub use bar::Bar;
 pub use box_elem::{BoxElem, BoxSpread};
+pub use values::{LineStyle, MarkerShape, Orientation, PlotGeometry, PlotPoint, PlotPoints};
+
 // grom
 pub use new_items::{HRay, LinkedYHRay, LinkedYPolygon, LinkedYText};
-use rect_elem::*;
-use values::{ClosestElem, PlotGeometry};
-pub use values::{LineStyle, MarkerShape, Orientation, PlotPoint, PlotPoints};
-
-use crate::*;
 
 mod bar;
 mod box_elem;
 mod rect_elem;
 mod values;
-// grom
 mod new_items;
+
 
 const DEFAULT_FILL_ALPHA: f32 = 0.05;
 

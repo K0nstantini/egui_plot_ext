@@ -1,6 +1,8 @@
-use std::collections::BTreeMap;
+use std::{collections::BTreeMap, string::String};
 
 use crate::*;
+
+use super::items::PlotItem;
 
 /// Where to place the plot legend.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

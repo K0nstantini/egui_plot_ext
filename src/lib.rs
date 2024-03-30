@@ -23,7 +23,8 @@ pub use crate::{
     axis::{Axis, AxisHints, HPlacement, Placement, VPlacement},
     items::{
         Arrows, Bar, BarChart, BoxElem, BoxPlot, BoxSpread, HLine, Line, LineStyle, MarkerShape,
-        Orientation, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon, Text, VLine,
+        Orientation, PlotGeometry, PlotImage, PlotItem, PlotPoint, PlotPoints, Points, Polygon,
+        Text, VLine,
     },
     legend::{Corner, Legend},
     memory::PlotMemory,
@@ -151,7 +152,7 @@ pub struct Plot {
     center_axis: Vec2b,
     allow_zoom: Vec2b,
     allow_drag: Vec2b,
-    allow_scroll: bool,
+    allow_scroll: Vec2b,
     allow_double_click_reset: bool,
     allow_boxed_zoom: bool,
     default_auto_bounds: Vec2b,
@@ -185,6 +186,8 @@ pub struct Plot {
     sharp_grid_lines: bool,
     clamp_grid: bool,
 
+    sense: Sense,
+
     // grom
     y_highlights: Vec<(f64, Color32)>,
 }
@@ -199,7 +202,7 @@ impl Plot {
             center_axis: false.into(),
             allow_zoom: true.into(),
             allow_drag: true.into(),
-            allow_scroll: true,
+            allow_scroll: true.into(),
             allow_double_click_reset: true,
             allow_boxed_zoom: true,
             default_auto_bounds: true.into(),
@@ -233,6 +236,8 @@ impl Plot {
             sharp_grid_lines: true,
             clamp_grid: false,
 
+            sense: egui::Sense::click_and_drag(),
+            
             // grom
             y_highlights: Vec::new(),
         }
@@ -334,8 +339,11 @@ impl Plot {
 
     /// Whether to allow scrolling in the plot. Default: `true`.
     #[inline]
-    pub fn allow_scroll(mut self, on: bool) -> Self {
-        self.allow_scroll = on;
+    pub fn allow_scroll<T>(mut self, on: T) -> Self
+    where
+        T: Into<Vec2b>,
+    {
+        self.allow_scroll = on.into();
         self
     }
 
@@ -483,6 +491,15 @@ impl Plot {
     #[inline]
     pub fn clamp_grid(mut self, clamp_grid: bool) -> Self {
         self.clamp_grid = clamp_grid;
+        self
+    }
+
+    /// Set the sense for the plot rect.
+    ///
+    /// Default: `Sense::click_and_drag()`.
+    #[inline]
+    pub fn sense(mut self, sense: Sense) -> Self {
+        self.sense = sense;
         self
     }
 
@@ -761,6 +778,7 @@ impl Plot {
             clamp_grid,
             grid_spacers,
             sharp_grid_lines,
+            sense,
 
             //grom
             y_highlights,
@@ -801,14 +819,14 @@ impl Plot {
         let plot_id = id.unwrap_or_else(|| ui.make_persistent_id(id_source));
 
         let ([x_axis_widgets, y_axis_widgets], plot_rect) = axis_widgets(
-            PlotMemory::load(ui.ctx(), plot_id).as_ref(), // TODO: avoid loading plot memory twice
+            PlotMemory::load(ui.ctx(), plot_id).as_ref(), // TODO(emilk): avoid loading plot memory twice
             show_axes,
             complete_rect,
             [&x_axes, &y_axes],
         );
 
         // Allocate the plot window.
-        let response = ui.allocate_rect(plot_rect, Sense::click_and_drag());
+        let response = ui.allocate_rect(plot_rect, sense);
 
         // Load or initialize the memory.
         ui.ctx().check_for_id_clash(plot_id, plot_rect, "Plot");
@@ -1054,7 +1072,7 @@ impl Plot {
                     ));
                 }
                 // when the click is release perform the zoom
-                if response.drag_released() {
+                if response.drag_stopped() {
                     let box_start_pos = mem.transform.value_from_position(box_start_pos);
                     let box_end_pos = mem.transform.value_from_position(box_end_pos);
                     let new_bounds = PlotBounds {
@@ -1096,8 +1114,14 @@ impl Plot {
                     mem.auto_bounds = !allow_zoom;
                 }
             }
-            if allow_scroll {
-                let scroll_delta = ui.input(|i| i.smooth_scroll_delta);
+            if allow_scroll.any() {
+                let mut scroll_delta = ui.input(|i| i.smooth_scroll_delta);
+                if !allow_scroll.x {
+                    scroll_delta.x = 0.0;
+                }
+                if !allow_scroll.y {
+                    scroll_delta.y = 0.0;
+                }
                 if scroll_delta != Vec2::ZERO {
                     mem.transform.translate_bounds(-scroll_delta);
                     mem.auto_bounds = false.into();
@@ -1389,6 +1413,11 @@ pub struct GridMark {
 pub fn log_grid_spacer(log_base: i64) -> GridSpacer {
     let log_base = log_base as f64;
     let step_sizes = move |input: GridInput| -> Vec<GridMark> {
+        // handle degenerate cases
+        if input.base_step_size.abs() < f64::EPSILON {
+            return Vec::new();
+        }
+
         // The distance between two of the thinnest grid lines is "rounded" up
         // to the next-bigger power of base
         let smallest_visible_unit = next_power(input.base_step_size, log_base);
@@ -1691,7 +1720,7 @@ impl PreparedPlot {
 /// assert_eq!(next_power(0.2,  10.0), 1);
 /// ```
 fn next_power(value: f64, base: f64) -> f64 {
-    assert_ne!(value, 0.0); // can be negative (typical for Y axis)
+    debug_assert_ne!(value, 0.0); // can be negative (typical for Y axis)
     base.powi(value.abs().log(base).ceil() as i32)
 }
 
@@ -1706,7 +1735,7 @@ fn generate_marks(step_sizes: [f64; 3], bounds: (f64, f64)) -> Vec<GridMark> {
 
 /// Fill in all values between [min, max] which are a multiple of `step_size`
 fn fill_marks_between(out: &mut Vec<GridMark>, step_size: f64, (min, max): (f64, f64)) {
-    assert!(max > min);
+    debug_assert!(max > min);
     let first = (min / step_size).ceil() as i64;
     let last = (max / step_size).ceil() as i64;
 

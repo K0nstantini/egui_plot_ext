@@ -13,5 +13,5 @@ version = "0.2"
 optional = true
 
 [dependencies.egui]
-version = "0.26.2"
+version = "0.27.1"
 default-features = false

@@ -1,8 +1,8 @@
 use std::{fmt::Debug, ops::RangeInclusive, sync::Arc};
 
-use egui::{Color32, emath::{remap_clamp, Rot2, round_to_decimals}, epaint::TextShape, Pos2, Rangef, Rect, Response, RichText, Sense, TextStyle, Ui, Vec2, WidgetText};
+use egui::{Color32, emath::{remap_clamp, round_to_decimals, Rot2}, epaint::TextShape, Pos2, Rangef, Rect, Response, Sense, TextStyle, Ui, Vec2, WidgetText, RichText};
 
-use super::{GridMark, transform::PlotTransform};
+use super::{transform::PlotTransform, GridMark};
 
 pub(super) type AxisFormatterFn = dyn Fn(GridMark, usize, &RangeInclusive<f64>) -> String;
 
@@ -102,7 +102,7 @@ pub struct AxisHints {
     pub(super) label_spacing: Rangef,
 }
 
-// TODO: this just a guess. It might cease to work if a user changes font size.
+// TODO(JohannesProgrammiert): this just a guess. It might cease to work if a user changes font size.
 const LINE_HEIGHT: f32 = 12.0;
 
 impl AxisHints {
@@ -367,7 +367,7 @@ impl AxisWidget {
 
                         match HPlacement::from(self.hints.placement) {
                             HPlacement::Left => {
-                                let angle = 0.0; // TODO: allow users to rotate text
+                                let angle = 0.0; // TODO(emilk): allow users to rotate text
 
                                 if angle == 0.0 {
                                     let x = self.rect.max.x - galley.size().x;
@@ -397,7 +397,7 @@ impl AxisWidget {
                 };
             }
         }
-
+        
         // grom
         for (value, color) in self.highlights {
             let text = (self.hints.formatter)(GridMark { value, step_size: 0.0 }, self.hints.digits, &self.range);
