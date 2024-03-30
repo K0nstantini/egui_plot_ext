@@ -1,10 +1,8 @@
-use std::ops::RangeInclusive;
 
-use egui::{Align2, Color32, epaint, pos2, Pos2, Rect, Shape, Stroke, TextStyle, Ui, WidgetText};
-
-use crate::{LineStyle, PlotBounds, PlotPoint, PlotTransform};
-use crate::items::{DEFAULT_FILL_ALPHA, PlotItem};
+use crate::items::DEFAULT_FILL_ALPHA;
 use crate::items::values::PlotGeometry;
+
+use crate::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct HRay {
@@ -13,6 +11,7 @@ pub struct HRay {
     pub(super) name: String,
     pub(super) highlight: bool,
     pub(super) style: LineStyle,
+    id: Option<Id>,
 }
 
 impl HRay {
@@ -23,6 +22,7 @@ impl HRay {
             name: String::default(),
             highlight: false,
             style: LineStyle::Solid,
+            id: None,
         }
     }
 
@@ -62,10 +62,16 @@ impl HRay {
         self.name = name.to_string();
         self
     }
+
+    #[inline]
+    pub fn id(mut self, id: Id) -> Self {
+        self.id = Some(id);
+        self
+    }
 }
 
 impl PlotItem for HRay {
-    fn shapes(&self, ui: &mut Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
+    fn shapes(&self, ui: &Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
         let HRay {
             point,
             stroke,
@@ -115,6 +121,10 @@ impl PlotItem for HRay {
         bounds.max[1] = self.point.y;
         bounds
     }
+
+    fn id(&self) -> Option<Id> {
+        self.id
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -125,6 +135,7 @@ pub struct LinkedYHRay {
     pub(super) name: String,
     pub(super) highlight: bool,
     pub(super) style: LineStyle,
+    id: Option<Id>,
 }
 
 impl LinkedYHRay {
@@ -136,6 +147,7 @@ impl LinkedYHRay {
             name: String::default(),
             highlight: false,
             style: LineStyle::Solid,
+            id: None,
         }
     }
 
@@ -178,7 +190,7 @@ impl LinkedYHRay {
 }
 
 impl PlotItem for LinkedYHRay {
-    fn shapes(&self, ui: &mut Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
+    fn shapes(&self, ui: &Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
         let LinkedYHRay {
             y,
             offset,
@@ -231,6 +243,10 @@ impl PlotItem for LinkedYHRay {
         bounds.max[1] = self.y;
         bounds
     }
+
+    fn id(&self) -> Option<Id> {
+        self.id
+    }
 }
 
 #[derive(Clone)]
@@ -242,6 +258,7 @@ pub struct LinkedYText {
     pub(super) highlight: bool,
     pub(super) color: Color32,
     pub(super) anchor: Align2,
+    id: Option<Id>,
 }
 
 impl LinkedYText {
@@ -254,6 +271,7 @@ impl LinkedYText {
             highlight: false,
             color: Color32::TRANSPARENT,
             anchor: Align2::CENTER_CENTER,
+            id: None,
         }
     }
 
@@ -284,7 +302,7 @@ impl LinkedYText {
 }
 
 impl PlotItem for LinkedYText {
-    fn shapes(&self, ui: &mut Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
+    fn shapes(&self, ui: &Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
         let color = if self.color == Color32::TRANSPARENT {
             ui.style().visuals.text_color()
         } else {
@@ -343,6 +361,10 @@ impl PlotItem for LinkedYText {
         bounds.max[1] = self.y;
         bounds
     }
+
+    fn id(&self) -> Option<Id> {
+        self.id
+    }
 }
 
 pub struct LinkedYPolygon {
@@ -353,6 +375,7 @@ pub struct LinkedYPolygon {
     pub(super) highlight: bool,
     pub(super) fill_color: Option<Color32>,
     pub(super) style: LineStyle,
+    id: Option<Id>,
 }
 
 impl LinkedYPolygon {
@@ -365,6 +388,7 @@ impl LinkedYPolygon {
             highlight: false,
             fill_color: None,
             style: LineStyle::Solid,
+            id: None,
         }
     }
 
@@ -407,7 +431,7 @@ impl LinkedYPolygon {
 }
 
 impl PlotItem for LinkedYPolygon {
-    fn shapes(&self, _ui: &mut Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
+    fn shapes(&self, _ui: &Ui, transform: &PlotTransform, shapes: &mut Vec<Shape>) {
         let Self {
             series,
             y,
@@ -461,5 +485,9 @@ impl PlotItem for LinkedYPolygon {
         bounds.min[1] = self.y;
         bounds.max[1] = self.y;
         bounds
+    }
+
+    fn id(&self) -> Option<Id> {
+        self.id
     }
 }
