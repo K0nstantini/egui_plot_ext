@@ -1,0 +1,17 @@
+[package]
+name = "egui_plot"
+version = "0.1.0"
+edition = "2021"
+
+[package.metadata.docs.rs]
+all-features = true
+
+[lib]
+
+[dependencies.document-features]
+version = "0.2"
+optional = true
+
+[dependencies.egui]
+version = "0.26.2"
+default-features = false
